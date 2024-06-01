@@ -1,6 +1,5 @@
 <?php
-$user = 'u67278';
-$pass = '7210431';
+
 
 try {
     $db = new PDO('mysql:host=localhost', $user, $pass,
