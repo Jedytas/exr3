@@ -1,6 +1,5 @@
 <?php
 
-
 try {
     $db = new PDO('mysql:host=localhost', $user, $pass,
         [PDO::ATTR_PERSISTENT => true, PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
@@ -53,19 +52,19 @@ try {
         PRIMARY KEY (application_id, language_id)
     )");
 
+    //Обновленная усиленная валидация
+
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors = FALSE;
 
-        if (empty($_POST['fullname']) || !preg_match('/^[a-zA-Zа-яА-ЯЁё\s]+$/u', $_POST['fullname'])) {
-            header('Location: index.php?errors=Введите корректное ФИО');
+        if (empty($_POST['fullname']) || !preg_match('/^[a-zA-Zа-яА-ЯЁё\s]+$/u', $_POST['fullname']) || strlen($_POST['fullname']) > 255) {
+            header('Location: index.php?errors=Введите корректное ФИО (только буквы и пробелы, максимум 255 символов).');
             $errors = TRUE;
-            exit(); 
         }
 
-        if (empty($_POST['phone']) || !preg_match('/^[0-9+\s]+$/', $_POST['phone'])) {
-            header('Location: index.php?errors=Введите корректный номер телефона.');    
+        if (empty($_POST['phone']) || !preg_match('/^\+?[0-9\s\-]+$/', $_POST['phone']) || strlen($_POST['phone']) > 15) {
+            header('Location: index.php?errors=Введите корректный номер телефона (только цифры, пробелы, и знак "+", максимум 15 символов).');
             $errors = TRUE;
-            exit(); 
         }
 
         if (empty($_POST['gender']) || ($_POST['gender'] != 'male' && $_POST['gender'] != 'female')) {
@@ -74,16 +73,22 @@ try {
             exit(); 
         }
 
-        if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-            header('Location: index.php?errors=Заполните корректный e-mail.');    
+        if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL) || strlen($_POST['email']) > 255) {
+            header('Location: index.php?errors=Заполните корректный e-mail (максимум 255 символов).');
             $errors = TRUE;
-            exit(); 
         }
 
-        if (empty($_POST['dob'])) {
-            header('Location: index.php?errors=Заполните дату рождения.');    
+        if (empty($_POST['dob']) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $_POST['dob'])) {
+            header('Location: index.php?errors=Заполните корректную дату рождения (формат ГГГГ-ММ-ДД).');
             $errors = TRUE;
-            exit(); 
+        } else {
+            $dob = new DateTime($_POST['dob']);
+            $today = new DateTime();
+            $age = $today->diff($dob)->y;
+            if ($dob > $today) {
+                header('Location: index.php?errors=Дата рождения не может быть в будущем.');
+                $errors = TRUE;
+            }
         }
 
         if (empty($_POST['favLanguage'])) {
@@ -92,10 +97,9 @@ try {
             exit(); 
         }
 
-        if (empty($_POST['bio'])) {
-            header('Location: index.php?errors=Заполните биографию');    
+        if (empty($_POST['bio']) || strlen($_POST['bio']) < 10 || strlen($_POST['bio']) > 1000) {
+            header('Location: index.php?errors=Заполните биографию (от 10 до 1000 символов).');
             $errors = TRUE;
-            exit(); 
         }
 
         if (empty($_POST['contract'])) {
